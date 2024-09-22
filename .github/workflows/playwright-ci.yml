@@ -56,15 +56,15 @@ jobs:
         uses: actions/checkout@v2
 
       # Step 2: Set up Node.js
-      - name: Set up Node.js
-        uses: actions/setup-node@v2
-        with:
-          node-version: '20'  # Use the same Node.js version as in the test step
+      # - name: Set up Node.js
+      #   uses: actions/setup-node@v2
+      #   with:
+      #     node-version: '20'  # Use the same Node.js version as in the test step
 
-      # Step 3: Deploy to Heroku
-      - name: Deploy to Heroku
-        env:
-          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}  # Heroku API key from GitHub Secrets
+      # Step 3: Deploy to Render
+      - name: Deploy to Render
         run: |
-          git remote add heroku https://git.heroku.com/<your-app-name>.git
-          git push heroku main  # Push code to Heroku for deployment
+          curl -X POST -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            --data '{"serviceId": "YOUR_RENDER_SERVICE_ID"}' \
+            https://api.render.com/v1/services/YOUR_RENDER_SERVICE_ID/deploys
