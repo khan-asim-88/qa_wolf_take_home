@@ -1,0 +1,70 @@
+name: Playwright CI/CD Pipeline
+
+# Triggers the pipeline when code is pushed or a pull request is opened on the 'main' branch
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  # Job 1: Continuous Integration (CI) - Run Playwright tests
+  test:
+    runs-on: ubuntu-latest  # Use Ubuntu runner for testing
+
+    steps:
+      # Step 1: Checkout the repository code
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      # Step 2: Set up Node.js
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '20'  # Specify the Node.js version
+
+      # Step 3: Install dependencies
+      - name: Install dependencies
+        run: npm install
+
+      # Step 4: Install Playwright browsers (for Chromium, Firefox, and WebKit)
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      # Step 5: Run Playwright tests
+      - name: Run Playwright Tests
+        run: npx playwright test
+
+      # Step 6: Upload Playwright HTML Report
+      - name: Upload Playwright HTML Report
+        if: failure() || success()  # Upload the report regardless of test results
+        uses: actions/upload-artifact@v2
+        with:
+          name: playwright-report  # Name of the report artifact
+          path: playwright-report  # Path to the report folder
+
+  # Job 2: Continuous Delivery (CD) - Deploy to Heroku
+  deploy:
+    needs: test  # Ensure the deploy job runs only after tests pass
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout the repository code again
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      # Step 2: Set up Node.js
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '20'  # Use the same Node.js version as in the test step
+
+      # Step 3: Deploy to Heroku
+      - name: Deploy to Heroku
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}  # Heroku API key from GitHub Secrets
+        run: |
+          git remote add heroku https://git.heroku.com/<your-app-name>.git
+          git push heroku main  # Push code to Heroku for deployment
