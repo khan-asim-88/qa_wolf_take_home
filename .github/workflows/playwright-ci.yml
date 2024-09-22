@@ -4,46 +4,49 @@ name: Playwright CI/CD Pipeline
 on:
   push:
     branches:
-      - main
+      - main  # Triggers when pushing to the 'main' branch
   pull_request:
     branches:
-      - main
+      - main  # Triggers when a pull request is made to the 'main' branch
 
+# Define the jobs in the pipeline
 jobs:
   # Job 1: Continuous Integration (CI) - Run Playwright tests
   test:
-    runs-on: ubuntu-latest  # Use Ubuntu runner for testing
+    runs-on: ubuntu-latest  # Use the latest Ubuntu image for the job
 
     steps:
       # Step 1: Checkout the repository code
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      # Step 2: Set up Node.js
+      # Step 2: Set up Node.js environment
       - name: Set up Node.js
         uses: actions/setup-node@v2
         with:
           node-version: '20'  # Specify the Node.js version
 
-      # Step 3: Install dependencies
+      # Step 3: Install dependencies from package.json
       - name: Install dependencies
-        run: npm install
+        run: npm install  # Install all necessary Node.js packages
 
       # Step 4: Install Playwright browsers (for Chromium, Firefox, and WebKit)
       - name: Install Playwright Browsers
-        run: npx playwright install
+        run: npx playwright install --with-deps # Ensure browsers are installed along with dependencies
 
       # Step 5: Run Playwright tests
       - name: Run Playwright Tests
-        run: npx playwright test
+        run: npx playwright test  # Execute Playwright tests
 
-      # Step 6: Upload Playwright HTML Report
-      - name: Upload Playwright HTML Report
-        if: failure() || success()  # Upload the report regardless of test results
+      # Step 6: Upload Playwright artifacts (screenshots, videos, traces) if tests fail
+      - name: Upload Playwright Artifacts
+        if: failure()  # Only upload artifacts if the tests fail
         uses: actions/upload-artifact@v2
         with:
-          name: playwright-report  # Name of the report artifact
-          path: playwright-report  # Path to the report folder
+          name: playwright-artifacts  # Name of the uploaded artifacts
+          path: |
+            playwright-report/  # Path where Playwright reports are stored
+            screenshots/  # Path where screenshots are stored
 
   # Job 2: Continuous Delivery (CD) - Deploy to Heroku
   deploy:
@@ -55,13 +58,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      # Step 2: Set up Node.js
-      # - name: Set up Node.js
-      #   uses: actions/setup-node@v2
-      #   with:
-      #     node-version: '20'  # Use the same Node.js version as in the test step
+      # Step 2: Install dependencies for deployment
+      - name: Install dependencies
+        run: npm install
 
-      # Step 3: Deploy to Render
-      - name: Deploy to Render
-        run: |
-          curl -X POST https://api.render.com/deploy/srv-cro5ig23esus73bup030?key=6igdRazzNfo
+      # Step 3: Deploy to Vercel
+      - name: Deploy to Vercel
+        run: npx vercel --prod --token ${{ secrets.VERCEL_TOKEN }}  # Use the Vercel token to deploy
