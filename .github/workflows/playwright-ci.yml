@@ -30,7 +30,7 @@ jobs:
         run: npm install
 
       # Step 4: Install Playwright browsers (for Chromium, Firefox, and WebKit)
-      - name: Install Playwright browsers
+      - name: Install Playwright Browsers
         run: npx playwright install --with-deps
 
       # Step 5: Run Playwright tests
