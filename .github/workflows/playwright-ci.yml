@@ -8,7 +8,7 @@ on:
 
 jobs:
   build_and_test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest  # The CI job will run on the latest Ubuntu version
 
     steps:
       # Step 1: Checkout the repository
@@ -19,26 +19,12 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '20'
+          node-version: '20'  # Specify Node.js version
 
-      # Step 3: Install lsof and additional diagnostics
-      - name: Install and check lsof
+      # Step 3: Install required libraries for Playwright browsers
+      - name: Install system dependencies (Chromium, Firefox, WebKit)
         run: |
           sudo apt-get update
-          sudo apt-get install -y lsof || echo "lsof installation failed!"
-          lsof || echo "lsof command failed!"
-          # Check if lsof is installed
-          if command -v lsof &> /dev/null
-          then
-              echo "lsof is successfully installed and found"
-          else
-              echo "lsof could not be found"
-              exit 1
-          fi
-
-      # Step 4: Install dependencies for browsers (Chromium, Firefox, WebKit)
-      - name: Install system dependencies for Playwright browsers
-        run: |
           sudo apt-get install -y \
             libnss3 \
             libatk-bridge2.0-0 \
@@ -78,12 +64,20 @@ jobs:
             libgstreamer-plugins-bad1.0-0 \
             libx264-155  # Additional media codecs
 
-      # Step 5: Install Playwright browsers
+      # Step 4: Install Playwright browsers
       - name: Install Playwright browsers
         run: npx playwright install
 
-      # Step 6: Run Playwright Tests
+      # Step 5: Run Playwright Tests
       - name: Run Playwright Tests
         run: npx playwright test
         env:
-          CI: true
+          CI: true  # Signals that tests are running in CI
+
+      # Upload Playwright report
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: playwright-report
+          path: playwright-report/
