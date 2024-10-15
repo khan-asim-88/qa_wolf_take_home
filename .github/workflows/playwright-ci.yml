@@ -1,13 +1,11 @@
-# GitHub Actions workflow for running Playwright tests in CI and managing Docker operations
+# GitHub Actions workflow for running Playwright tests in CI/CD pipeline
 name: Playwright CI/CD Pipeline
 
-# Triggers the workflow when a commit is pushed to the main branch
 on:
   push:
     branches:
       - main
 
-# Defines the jobs that will run as part of this workflow
 jobs:
   build_and_test:
     runs-on: ubuntu-latest  # The CI job will run on the latest Ubuntu version
@@ -16,60 +14,72 @@ jobs:
       # Step 1: Checkout the repository
       - name: Checkout repository
         uses: actions/checkout@v3
-        with:
-          fetch-depth: 0  # Ensures full repository history is available
 
-      # Step 2: Set up Docker Buildx (required for Docker builds)
+      # Step 2: Set up Docker Buildx (if required)
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      # Step 3: Log in to Docker Hub using secrets stored in GitHub
-      # Ensure DOCKER_USERNAME and DOCKER_PASSWORD are stored in GitHub Secrets
+      # Step 3: Log in to Docker Hub
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}  # Fetches Docker username from GitHub secrets
-          password: ${{ secrets.DOCKER_PASSWORD }}  # Fetches Docker password from GitHub secrets
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # Step 4: Build Docker image for Playwright tests
-      - name: Build Docker image
-        run: docker build -t your-image-name .
-
-      # Step 5: Set up Node.js environment
+      # Step 4: Set up Node.js
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '20'  # Define Node.js version for the environment
+          node-version: '20'  # Specify Node.js version
 
-      # Step 6: Install dependencies for Playwright
+      # Step 5: Install required libraries for Playwright browsers
+      - name: Install dependencies for browsers
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libnss3 \
+            libatk-bridge2.0-0 \
+            libxcomposite1 \
+            libxdamage1 \
+            libxrandr2 \
+            libgbm1 \
+            libpango-1.0-0 \
+            libcups2 \
+            libatk1.0-0 \
+            libgtk-3-0 \
+            libasound2 \
+            libpangocairo-1.0-0 \
+            libxshmfence1 \
+            libx11-xcb1 \
+            libxcb-dri3-0 \
+            libdrm2 \
+            libgbm1 \
+            libxkbcommon0 \
+            libflac8 \
+            libmpg123-0 \
+            libopengl0 \
+            libxshmfence1 \
+            libglu1-mesa \
+            libgles2-mesa
+
+      # Step 6: Install Playwright dependencies and browsers
       - name: Install dependencies
-        run: npm ci  # Use 'npm ci' for clean installs based on the lockfile
+        run: npm ci  # Clean install from package-lock.json
 
       # Step 7: Install Playwright Browsers
       - name: Install Playwright browsers
-        run: npx playwright install  # Installs browsers required for Playwright tests
+        run: npx playwright install
 
       # Step 8: Run Playwright Tests
-      # This is where the Playwright tests defined in your test suite will be executed.
       - name: Run Playwright Tests
         run: npx playwright test
         env:
-          CI: true  # Indicates that the tests are being run in a CI environment
+          CI: true  # Signals that tests are running in CI
 
-      # Optional: Generate Playwright report (HTML/JSON report)
-      # If you have defined a custom report in your playwright.config.js, ensure it is stored as an artifact
+      # Optional: Upload Playwright report
       - name: Upload Playwright report
         if: always()
         uses: actions/upload-artifact@v3
         with:
           name: playwright-report
-          path: playwright-report/  # The location where your Playwright report is saved
-          
-  deploy:
-    # This is an optional deploy job if you want to deploy after tests
-    runs-on: ubuntu-latest
-    needs: build_and_test
-
-    steps:
-      - name: Deploy the application
-        run: echo "Deploy steps go here"
+          path: playwright-report/
