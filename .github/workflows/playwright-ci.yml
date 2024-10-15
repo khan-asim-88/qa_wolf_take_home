@@ -43,7 +43,7 @@ jobs:
 
       - name: Upload test results and screenshots
         if: failure()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: playwright-results
           path: |
@@ -52,7 +52,7 @@ jobs:
         # If tests fail, upload the test results and screenshots for later review
 
       - name: Upload Playwright HTML Report
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: playwright-html-report
           path: playwright-report
@@ -66,4 +66,3 @@ jobs:
       - name: Deploy to production
         run: |
           echo "Deploying the latest test-passed version..."
-          # Here, add any deployment commands, such as to AWS, GCP, or Heroku, if the tests pass
