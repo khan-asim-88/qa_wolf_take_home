@@ -32,11 +32,23 @@ jobs:
         with:
           node-version: '20'  # Specify Node.js version
 
-      # Step 5: Install lsof and required libraries for Playwright browsers
-      - name: Install system dependencies (lsof, Chromium, Firefox, WebKit)
+      # Step 5: Install lsof and check if installed successfully
+      - name: Install and check lsof
         run: |
           sudo apt-get update
-          sudo apt-get install -y lsof  # Install lsof
+          sudo apt-get install -y lsof
+          # Diagnostic check to see if lsof is installed and can be executed
+          if ! command -v lsof &> /dev/null
+          then
+              echo "lsof could not be found"
+              exit 1
+          else
+              echo "lsof is successfully installed"
+          fi
+
+      # Step 6: Install required libraries for Playwright browsers
+      - name: Install system dependencies (Chromium, Firefox, WebKit)
+        run: |
           sudo apt-get install -y \
             libnss3 \
             libatk-bridge2.0-0 \
@@ -76,15 +88,15 @@ jobs:
             libgstreamer-plugins-bad1.0-0 \
             libx264-155  # Additional media codecs
 
-      # Step 6: Install Playwright dependencies and browsers
+      # Step 7: Install Playwright dependencies and browsers
       - name: Install dependencies
         run: npm ci  # Clean install from package-lock.json
 
-      # Step 7: Install Playwright Browsers
+      # Step 8: Install Playwright Browsers
       - name: Install Playwright browsers
         run: npx playwright install
 
-      # Step 8: Run Playwright Tests
+      # Step 9: Run Playwright Tests
       - name: Run Playwright Tests
         run: npx playwright test
         env:
