@@ -1,83 +1,69 @@
-# GitHub Actions workflow for running Playwright tests in CI/CD pipeline
 name: Playwright CI/CD Pipeline
 
 on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
-  build_and_test:
-    runs-on: ubuntu-latest  # The CI job will run on the latest Ubuntu version
+  test:
+    runs-on: ubuntu-latest  # Linux environment to run the tests
+
+    services:
+      docker:
+        image: docker:20.10  # Use the Docker service for containerization
+        options: --privileged
 
     steps:
-      # Step 1: Checkout the repository
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v2
+        # Checkout the codebase for testing
 
-      # Step 2: Set up Node.js
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
+      - name: Set up Node.js environment
+        uses: actions/setup-node@v2
         with:
-          node-version: '20'  # Specify Node.js version
+          node-version: '20'
 
-      # Step 3: Install required libraries for Playwright browsers
-      - name: Install system dependencies (Chromium, Firefox, WebKit)
+      - name: Install dependencies
+        run: npm install
+        # Install all necessary packages (Playwright, Node, etc.)
+
+      - name: Build Docker container
         run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            libnss3 \
-            libatk-bridge2.0-0 \
-            libxcomposite1 \
-            libxdamage1 \
-            libxrandr2 \
-            libgbm1 \
-            libpango-1.0-0 \
-            libcups2 \
-            libatk1.0-0 \
-            libgtk-3-0 \
-            libasound2 \
-            libpangocairo-1.0-0 \
-            libxshmfence1 \
-            libx11-xcb1 \
-            libxcb-dri3-0 \
-            libdrm2 \
-            libgbm1 \
-            libxkbcommon0 \
-            libflac8 \
-            libmpg123-0 \
-            libopengl0 \
-            libxshmfence1 \
-            libglu1-mesa \
-            libgles2-mesa \
-            # WebKit-specific dependencies
-            libwoff1 \
-            libopus0 \
-            libharfbuzz-icu0 \
-            libwebpdemux2 \
-            libenchant1c2a \
-            libhyphen0 \
-            libgstreamer-gl1.0-0 \
-            gstreamer1.0-plugins-base \
-            gstreamer1.0-plugins-good \
-            gstreamer1.0-libav \
-            libgstreamer-plugins-bad1.0-0 \
-            libx264-155  # Additional media codecs
+          docker build -t playwright-container .
+        # Build the Docker image using the Dockerfile provided
 
-      # Step 4: Install Playwright browsers
-      - name: Install Playwright browsers
-        run: npx playwright install
+      - name: Run Playwright tests in Docker
+        run: |
+          docker run -v ${{ github.workspace }}:/usr/src/app -w /usr/src/app playwright-container npx playwright test --project=chromium
+        # Run the Playwright tests inside the container using the project configuration
 
-      # Step 5: Run Playwright Tests
-      - name: Run Playwright Tests
-        run: npx playwright test
-        env:
-          CI: true  # Signals that tests are running in CI
-
-      # Upload Playwright report
-      - name: Upload Playwright report
-        if: always()
-        uses: actions/upload-artifact@v3
+      - name: Upload test results and screenshots
+        if: failure()
+        uses: actions/upload-artifact@v2
         with:
-          name: playwright-report
-          path: playwright-report/
+          name: playwright-results
+          path: |
+            test-results/
+            screenshots/
+        # If tests fail, upload the test results and screenshots for later review
+
+      - name: Upload Playwright HTML Report
+        uses: actions/upload-artifact@v2
+        with:
+          name: playwright-html-report
+          path: playwright-report
+        # Upload the Playwright HTML report for test analysis
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: success()
+    steps:
+      - name: Deploy to production
+        run: |
+          echo "Deploying the latest test-passed version..."
+          # Here, add any deployment commands, such as to AWS, GCP, or Heroku, if the tests pass

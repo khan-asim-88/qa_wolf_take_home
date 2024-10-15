@@ -1,23 +1,20 @@
-# Use official Node.js runtime as the base image
+# Use the official Node.js image as a base image
 FROM node:20
 
 # Set the working directory in the container
 WORKDIR /usr/src/app
 
-# Copy package.json and package-lock.json
-COPY package*.json ./
+# Copy package.json and package-lock.json to the container
+COPY package.json package-lock.json ./
 
-# Install Node.js dependencies
+# Install all dependencies
 RUN npm install
 
-# Install Playwright browsers
-RUN npx playwright install --with-deps
-
-# Copy the rest of the application code
+# Copy the entire project directory to the container
 COPY . .
 
-# Expose the application port (optional)
-EXPOSE 3000
+# Install Playwright browsers (Chromium, Firefox, and WebKit)
+RUN npx playwright install --with-deps
 
-# Default command to run the application
-CMD ["node", "index.js"]
+# Command to run the Playwright tests
+CMD ["npx", "playwright", "test"]
