@@ -32,10 +32,11 @@ jobs:
         with:
           node-version: '20'  # Specify Node.js version
 
-      # Step 5: Install required libraries for Playwright browsers, including WebKit
-      - name: Install dependencies for browsers (Chromium, Firefox, WebKit)
+      # Step 5: Install lsof and required libraries for Playwright browsers
+      - name: Install system dependencies (lsof, Chromium, Firefox, WebKit)
         run: |
           sudo apt-get update
+          sudo apt-get install -y lsof  # Install lsof
           sudo apt-get install -y \
             libnss3 \
             libatk-bridge2.0-0 \
