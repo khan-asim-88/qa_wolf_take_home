@@ -32,8 +32,8 @@ jobs:
         with:
           node-version: '20'  # Specify Node.js version
 
-      # Step 5: Install required libraries for Playwright browsers
-      - name: Install dependencies for browsers
+      # Step 5: Install required libraries for Playwright browsers, including WebKit
+      - name: Install dependencies for browsers (Chromium, Firefox, WebKit)
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -60,7 +60,20 @@ jobs:
             libopengl0 \
             libxshmfence1 \
             libglu1-mesa \
-            libgles2-mesa
+            libgles2-mesa \
+            # WebKit-specific dependencies
+            libwoff1 \
+            libopus0 \
+            libharfbuzz-icu0 \
+            libwebpdemux2 \
+            libenchant1c2a \
+            libhyphen0 \
+            libgstreamer-gl1.0-0 \
+            gstreamer1.0-plugins-base \
+            gstreamer1.0-plugins-good \
+            gstreamer1.0-libav \
+            libgstreamer-plugins-bad1.0-0 \
+            libx264-155  # Additional media codecs
 
       # Step 6: Install Playwright dependencies and browsers
       - name: Install dependencies
@@ -76,7 +89,7 @@ jobs:
         env:
           CI: true  # Signals that tests are running in CI
 
-      # Optional: Upload Playwright report
+      # Upload Playwright report
       - name: Upload Playwright report
         if: always()
         uses: actions/upload-artifact@v3
