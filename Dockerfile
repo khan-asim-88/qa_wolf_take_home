@@ -15,6 +15,3 @@ COPY . .
 
 # Install Playwright browsers (Chromium, Firefox, and WebKit)
 RUN npx playwright install --with-deps
-
-# Default command that checks for an environment variable to decide what to run
-CMD ["sh", "-c", "if [ \"$RUN\" = 'node' ]; then node index.js; elif [ \"$RUN\" = 'test' ]; then npx playwright test; else node index.js && npx playwright test; fi"]
