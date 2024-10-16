@@ -30,30 +30,25 @@ jobs:
           node-version: '20'
         # This ensures that Node.js is installed and ready for running scripts
 
-      # Step 3: Install dependencies for Playwright and your project
-      - name: Install dependencies
-        run: npm install
-        # Install all required dependencies from package.json (including Playwright)
-
-      # Step 4: Build the Docker container from the provided Dockerfile
+      # Step 3: Build Docker container from the Dockerfile
       - name: Build Docker container
         run: |
           docker build -t playwright-container .
         # Builds a Docker image using the Dockerfile in your project
 
-      # Step 5: Run the custom Node.js script (index.js)
-      - name: Run Node.js script
+      # Step 4: Run only Node.js script (index.js)
+      - name: Run Node.js script in Docker
         run: |
-          docker run -v ${{ github.workspace }}:/usr/src/app -w /usr/src/app playwright-container node index.js
-        # Runs the custom Node script inside the Docker container
+          docker run -e RUN=node -v ${{ github.workspace }}:/usr/src/app -w /usr/src/app playwright-container
+        # This runs only the custom Node.js script (index.js) inside the container
 
-      # Step 6: Run Playwright tests for all browsers (Chromium, Firefox, WebKit)
-      - name: Run Playwright tests in Docker for all browsers
+      # Step 5: Run Playwright tests in Docker for all browsers
+      - name: Run Playwright tests in Docker
         run: |
-          docker run -v ${{ github.workspace }}:/usr/src/app -w /usr/src/app playwright-container npx playwright test
-        # This command runs the Playwright tests for all configured browsers
+          docker run -e RUN=test -v ${{ github.workspace }}:/usr/src/app -w /usr/src/app playwright-container
+        # This runs only the Playwright tests inside the container
 
-      # Step 7: Upload test results and screenshots if the tests fail
+      # Step 6: Upload test results and screenshots if the tests fail
       - name: Upload test results and screenshots
         if: failure()
         uses: actions/upload-artifact@v3  # Updated to the latest version
@@ -64,7 +59,7 @@ jobs:
             screenshots/
         # If any tests fail, this step uploads the test results and screenshots
 
-      # Step 8: Upload the Playwright HTML report
+      # Step 7: Upload the Playwright HTML report
       - name: Upload Playwright HTML Report
         uses: actions/upload-artifact@v3  # Updated to the latest version
         with:
@@ -75,9 +70,9 @@ jobs:
   deploy:
     needs: test
     runs-on: ubuntu-latest
-    if: success()  # Only runs if the tests pass
+    if: success()
     steps:
-      # Step 9: Deploy to production
       - name: Deploy to production
         run: |
           echo "Deploying the latest test-passed version..."
+        # This is a placeholder step, modify it for your actual deployment
