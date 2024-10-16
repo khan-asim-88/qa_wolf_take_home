@@ -77,8 +77,16 @@ jobs:
           docker run -v ${{ github.workspace }}:/usr/src/app -w /usr/src/app playwright-container
         # Simulates local deployment of the tested container by running the latest version in Docker
 
-      # Step 4: Run Smoke Tests After Staging Deployment
+      # Step 4: Install Playwright and Dependencies for Smoke Tests
+      - name: Install Playwright for Smoke Tests
+        run: |
+          echo "Installing Playwright and required dependencies for smoke tests..."
+          docker run -v ${{ github.workspace }}:/usr/src/app -w /usr/src/app playwright-container npm install @playwright/test
+        # Ensures Playwright is installed inside the container for the smoke tests
+
+      # Step 5: Run Smoke Tests After Staging Deployment
       - name: Run Smoke Tests After Staging Deployment
         run: |
           echo "Running smoke tests to ensure staging deployment works..."
           docker run -v ${{ github.workspace }}:/usr/src/app -w /usr/src/app playwright-container npx playwright test
+        # Runs smoke tests to verify the "staging" deployment is working correctly
