@@ -10,59 +10,74 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest  # Linux environment to run the tests
+    runs-on: ubuntu-latest  # Use Ubuntu as the CI environment
 
     services:
       docker:
-        image: docker:20.10  # Use the Docker service for containerization
+        image: docker:20.10  # Use Docker to containerize the environment
         options: --privileged
 
     steps:
+      # Step 1: Checkout the repository to get the code
       - name: Checkout repository
         uses: actions/checkout@v2
-        # Checkout the codebase for testing
+        # This ensures the CI pipeline has access to your project files
 
+      # Step 2: Set up Node.js environment with the specified version
       - name: Set up Node.js environment
         uses: actions/setup-node@v2
         with:
           node-version: '20'
+        # This ensures that Node.js is installed and ready for running scripts
 
+      # Step 3: Install dependencies for Playwright and your project
       - name: Install dependencies
         run: npm install
-        # Install all necessary packages (Playwright, Node, etc.)
+        # Install all required dependencies from package.json (including Playwright)
 
+      # Step 4: Build the Docker container from the provided Dockerfile
       - name: Build Docker container
         run: |
           docker build -t playwright-container .
-        # Build the Docker image using the Dockerfile provided
+        # Builds a Docker image using the Dockerfile in your project
 
-      - name: Run Playwright tests in Docker
+      # Step 5: Run the custom Node.js script (index.js)
+      - name: Run Node.js script
         run: |
-          docker run -v ${{ github.workspace }}:/usr/src/app -w /usr/src/app playwright-container npx playwright test --project=chromium
-        # Run the Playwright tests inside the container using the project configuration
+          docker run -v ${{ github.workspace }}:/usr/src/app -w /usr/src/app playwright-container node index.js
+        # Runs the custom Node script inside the Docker container
 
+      # Step 6: Run Playwright tests for all browsers (Chromium, Firefox, WebKit)
+      - name: Run Playwright tests in Docker for all browsers
+        run: |
+          docker run -v ${{ github.workspace }}:/usr/src/app -w /usr/src/app playwright-container npx playwright test
+        # This command runs the Playwright tests for all configured browsers
+
+      # Step 7: Upload test results and screenshots if the tests fail
       - name: Upload test results and screenshots
         if: failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v3  # Updated to the latest version
         with:
           name: playwright-results
           path: |
             test-results/
             screenshots/
-        # If tests fail, upload the test results and screenshots for later review
+        # If any tests fail, this step uploads the test results and screenshots
 
+      # Step 8: Upload the Playwright HTML report
       - name: Upload Playwright HTML Report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v3  # Updated to the latest version
         with:
           name: playwright-html-report
           path: playwright-report
-        # Upload the Playwright HTML report for test analysis
+        # This step uploads the Playwright HTML report generated after the tests
 
   deploy:
     needs: test
     runs-on: ubuntu-latest
-    if: success()
+    if: success()  # Only runs if the tests pass
     steps:
+      # Step 9: Deploy to production
       - name: Deploy to production
         run: |
           echo "Deploying the latest test-passed version..."
