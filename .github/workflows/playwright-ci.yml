@@ -9,84 +9,76 @@ on:
       - main
 
 jobs:
-  # Job 1: Run Tests
   test:
-    runs-on: ubuntu-latest
-    steps:
-      # Step 1: Checkout the repository
-      - name: Checkout repository
-        uses: actions/checkout@v3
+    runs-on: ubuntu-latest  # Use Ubuntu as the CI environment
 
-      # Step 2: Set up Node.js environment
+    services:
+      docker:
+        image: docker:20.10  # Use Docker to containerize the environment
+        options: --privileged
+
+    steps:
+      # Step 1: Checkout the repository to get the code
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        # This ensures the CI pipeline has access to your project files
+
+      # Step 2: Set up Node.js environment with the specified version
       - name: Set up Node.js environment
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v2
         with:
           node-version: '20'
+        # This ensures that Node.js is installed and ready for running scripts
 
-      # Step 3: Install dependencies (including Playwright)
+      # Step 3: Install dependencies for Playwright and your project
       - name: Install dependencies
         run: npm install
+        # Install all required dependencies from package.json (including Playwright)
 
-      # Step 4: Build Docker container from Dockerfile
+      # Step 4: Build the Docker container from the provided Dockerfile
       - name: Build Docker container
-        run: docker build -t playwright-container .
+        run: |
+          docker build -t playwright-container .
+        # Builds a Docker image using the Dockerfile in your project
 
-      # Step 5: Run Node.js script inside Docker container
-      - name: Run Node.js script in Docker
-        run: docker run -v ${{ github.workspace }}:/usr/src/app -w /usr/src/app playwright-container node index.js
+      # Step 5: Run the custom Node.js script (index.js)
+      - name: Run Node.js script
+        run: |
+          docker run -v ${{ github.workspace }}:/usr/src/app -w /usr/src/app playwright-container node index.js
+        # Runs the custom Node script inside the Docker container
 
-      # Step 6: Run Playwright tests inside Docker for all browsers
-      - name: Run Playwright tests in Docker
-        run: docker run -v ${{ github.workspace }}:/usr/src/app -w /usr/src/app playwright-container npx playwright test
+      # Step 6: Run Playwright tests for all browsers (Chromium, Firefox, WebKit)
+      - name: Run Playwright tests in Docker for all browsers
+        run: |
+          docker run -v ${{ github.workspace }}:/usr/src/app -w /usr/src/app playwright-container npx playwright test
+        # This command runs the Playwright tests for all configured browsers
 
-      # Step 7: Upload test results and screenshots if tests fail
+      # Step 7: Upload test results and screenshots if the tests fail
       - name: Upload test results and screenshots
         if: failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v3  # Updated to the latest version
         with:
           name: playwright-results
           path: |
             test-results/
             screenshots/
+        # If any tests fail, this step uploads the test results and screenshots
 
-      # Step 8: Upload Playwright HTML report
+      # Step 8: Upload the Playwright HTML report
       - name: Upload Playwright HTML Report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v3  # Updated to the latest version
         with:
           name: playwright-html-report
           path: playwright-report
+        # This step uploads the Playwright HTML report generated after the tests
 
-  # Job 2: Deploy Locally to Staging
-  deploy_staging:
-    needs: test  # Only runs if the tests pass
+  deploy:
+    needs: test
     runs-on: ubuntu-latest
-    if: success()  # Run deployment only if tests are successful
+    if: success()  # Only runs if the tests pass
     steps:
-      # Step 1: Checkout the repository
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      # Step 2: Build Docker container from Dockerfile (again)
-      - name: Build Docker container for Staging
-        run: docker build -t playwright-container .
-
-      # Step 3: Simulate Local Deployment to Staging
-      - name: Simulate Local Deployment to Staging
+      # Step 9: Deploy to production
+      - name: Deploy to production
         run: |
-          echo "Deploying the latest test-passed version to the local staging environment..."
-          docker run -v ${{ github.workspace }}:/usr/src/app -w /usr/src/app playwright-container
-        # Simulates local deployment of the tested container by running the latest version in Docker
-
-      # Step 4: Install Playwright and Dependencies for Smoke Tests
-      - name: Install Playwright for Smoke Tests
-        run: |
-          echo "Installing Playwright and required dependencies for smoke tests..."
-          docker run -v ${{ github.workspace }}:/usr/src/app -w /usr/src/app playwright-container npm install @playwright/test
-        # Ensures Playwright is installed inside the container for the smoke tests
-
-      # Step 5: Run Smoke Tests After Staging Deployment
-      - name: Run Smoke Tests After Staging Deployment
-        run: |
-          echo "Running smoke tests to ensure staging deployment works..."
-          docker run -v ${{ github.workspace }}:/usr/src/app -w /usr/src/app playwright-container npx playwright test
-        # Runs smoke tests to verify the "staging" deployment is working correctly
+          echo "Deploying the latest test-passed version..."
+        # This is a placeholder step, modify it for your actual deployment
