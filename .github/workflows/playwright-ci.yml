@@ -11,17 +11,17 @@ on:
 jobs:
   # Job 1: Run Tests
   test:
-    runs-on: ubuntu-latest  # Use Ubuntu as the CI environment
+    runs-on: ubuntu-latest
     steps:
       # Step 1: Checkout the repository
       - name: Checkout repository
-        uses: actions/checkout@v3  # Use the latest version
+        uses: actions/checkout@v3
 
       # Step 2: Set up Node.js environment
       - name: Set up Node.js environment
-        uses: actions/setup-node@v3  # Use the latest version
+        uses: actions/setup-node@v3
         with:
-          node-version: '20'  # Use Node.js v20
+          node-version: '20'
 
       # Step 3: Install dependencies (including Playwright)
       - name: Install dependencies
@@ -34,12 +34,10 @@ jobs:
       # Step 5: Run Node.js script inside Docker container
       - name: Run Node.js script in Docker
         run: docker run -v ${{ github.workspace }}:/usr/src/app -w /usr/src/app playwright-container node index.js
-        # This runs only the custom Node.js script (index.js) inside the container
 
       # Step 6: Run Playwright tests inside Docker for all browsers
       - name: Run Playwright tests in Docker
         run: docker run -v ${{ github.workspace }}:/usr/src/app -w /usr/src/app playwright-container npx playwright test
-        # This runs only the Playwright tests inside the container
 
       # Step 7: Upload test results and screenshots if tests fail
       - name: Upload test results and screenshots
@@ -50,7 +48,6 @@ jobs:
           path: |
             test-results/
             screenshots/
-        # If any tests fail, this step uploads the test results and screenshots
 
       # Step 8: Upload Playwright HTML report
       - name: Upload Playwright HTML Report
@@ -58,7 +55,6 @@ jobs:
         with:
           name: playwright-html-report
           path: playwright-report
-        # This step uploads the Playwright HTML report generated after the tests
 
   # Job 2: Deploy Locally to Staging
   deploy_staging:
@@ -66,14 +62,23 @@ jobs:
     runs-on: ubuntu-latest
     if: success()  # Run deployment only if tests are successful
     steps:
+      # Step 1: Checkout the repository
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # Step 2: Build Docker container from Dockerfile (again)
+      - name: Build Docker container for Staging
+        run: docker build -t playwright-container .
+
+      # Step 3: Simulate Local Deployment to Staging
       - name: Simulate Local Deployment to Staging
         run: |
           echo "Deploying the latest test-passed version to the local staging environment..."
           docker run -v ${{ github.workspace }}:/usr/src/app -w /usr/src/app playwright-container
         # Simulates local deployment of the tested container by running the latest version in Docker
 
+      # Step 4: Run Smoke Tests After Staging Deployment
       - name: Run Smoke Tests After Staging Deployment
         run: |
           echo "Running smoke tests to ensure staging deployment works..."
           docker run -v ${{ github.workspace }}:/usr/src/app -w /usr/src/app playwright-container npx playwright test
-        # Runs a subset of tests (e.g., smoke tests) after deploying to the "staging" environment
