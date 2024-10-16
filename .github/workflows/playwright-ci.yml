@@ -20,12 +20,12 @@ jobs:
     steps:
       # Step 1: Checkout the repository to get the code
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         # This ensures the CI pipeline has access to your project files
 
       # Step 2: Set up Node.js environment with the specified version
       - name: Set up Node.js environment
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v3
         with:
           node-version: '20'
         # This ensures that Node.js is installed and ready for running scripts
@@ -36,13 +36,13 @@ jobs:
           docker build -t playwright-container .
         # Builds a Docker image using the Dockerfile in your project
 
-      # Step 4: Run only Node.js script (index.js)
+      # Step 4: Run the Node.js script inside the Docker container
       - name: Run Node.js script in Docker
         run: |
           docker run -e RUN=node -v ${{ github.workspace }}:/usr/src/app -w /usr/src/app playwright-container
         # This runs only the custom Node.js script (index.js) inside the container
 
-      # Step 5: Run Playwright tests in Docker for all browsers
+      # Step 5: Run Playwright tests inside Docker for all browsers
       - name: Run Playwright tests in Docker
         run: |
           docker run -e RUN=test -v ${{ github.workspace }}:/usr/src/app -w /usr/src/app playwright-container

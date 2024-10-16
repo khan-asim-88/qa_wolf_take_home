@@ -7,7 +7,7 @@ WORKDIR /usr/src/app
 # Copy package.json and package-lock.json to the container
 COPY package.json package-lock.json ./
 
-# Install all dependencies
+# Install all dependencies, including Playwright
 RUN npm install
 
 # Copy the entire project directory to the container
